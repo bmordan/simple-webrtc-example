@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://cdn.jsdelivr.net/npm/simple-peer/simplepeer.min.js"></script>
+    </head>
+    <body>
+        <section style="max-width: 29rem;color:white;background-color: blue;padding:1rem;margin-bottom:1rem;">
+            <p>How does this work? First You need to establish the root peer. To do this use
+            <br /><pre>http://localhost:3000/#1</pre><br />
+            ("#1" on the URL) to establish the root peer. You should then see a printout of a JSON object rendered on the page. Copy this and open another browser window and visit: <pre>http://loaclhost:3000</pre> (without the "#1" on the URL) and paste the "offer" JSON object into the field. Then click on <button>connect</button> wait for the "ask" to be rendered in that browser window. Then you can copy and paste that "ask" into your original browser window (with "#1" on the URL). Finally press <button>connect</button> and you should see the peers connect over WebRTC and the video streams being rendered in each others window.</p>
+        </section>
+        <section>
+            <label>Your ID</label>
+            <p style="font-size:6px;" id="yourId"></p>
+        </section>
+        <section>
+            <label>Connect To</label>
+            <textarea id="connectTo" placeholder="paste here"></textarea>
+        </section>
+        <button id="connect">connect</button>
+        <section id="video" style="background-color:black;border-radius:9px;"></section>
+        <script>
+            const yourId = document.getElementById('yourId')
+            const connectTo = document.getElementById('connectTo')
+            const connect = document.getElementById('connect')
+
+            const streamHandler = stream => {
+                const peer = new SimplePeer({
+                    initiator: location.hash === '#1',
+                    trickle: false,
+                    stream: stream
+                })
+                
+                peer.on('signal', data => {
+                    yourId.innerHTML = JSON.stringify(data)
+                })
+                
+                connect.addEventListener('click', () => {
+                    peer.signal(JSON.parse(connectTo.value))
+                })
+
+                peer.on('connect', () => {
+                    yourId.innerHTML = "Connected"
+                    const [video] = document.getElementsByTagName('video')
+                    video.play()
+                })
+
+                peer.on('stream', mediaStream => {
+                    const video = document.createElement('video')
+                    video.srcObject = mediaStream
+                    document.getElementById('video').appendChild(video)
+                })
+            }
+
+            navigator.mediaDevices
+                .getUserMedia({ video: true, audio: false })
+                .then(streamHandler)
+                .catch(err => console.error(err))
+        </script>
+    </body>
+</html>
